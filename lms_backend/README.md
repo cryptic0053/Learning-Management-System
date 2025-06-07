@@ -1,1 +1,1 @@
-# lms_backend_drf_OSTAD
+# lms_backend
