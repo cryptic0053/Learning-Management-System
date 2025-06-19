@@ -5,4 +5,7 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export const BASE_URL = "https://lms-backend-xpwc.onrender.com/api";
+// ✅ Use your backend running port + /api
+export const BASE_URL = "http://127.0.0.1:8000/api";
+
+
