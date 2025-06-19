@@ -1,4 +1,7 @@
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertDescription
+} from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,7 +9,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,24 +17,25 @@ import { BASE_URL } from "@/lib/utils";
 import { useAuth } from "@/providers/auth";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import React, { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     username: "",
-    password: "",
+    password: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Basic validation
     if (!formData.username || !formData.password) {
       setError("Please fill in all fields");
       setIsLoading(false);
@@ -39,59 +43,54 @@ const LoginPage = () => {
     }
 
     try {
-      // API call to get JWT token
       const response = await fetch(`${BASE_URL}/token/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-        }),
+        body: JSON.stringify(formData)
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Successfully authenticated
-        console.log("Login successful:", data);
+        // Token retrieved
+        const access = data.access;
+        const refresh = data.refresh;
 
-        // Get user profile data
-        const profileResponse = await fetch(
-          `${BASE_URL}/user/profile/student`,
-          {
-            headers: {
-              Authorization: `Bearer ${data.access}`,
-            },
+        // Fetch user profile
+        const profileRes = await fetch(`${BASE_URL}/user/profile/student`, {
+          headers: {
+            Authorization: `Bearer ${access}`
           }
-        );
+        });
 
         let userData = null;
-        if (profileResponse.ok) {
-          userData = await profileResponse.json();
+        if (profileRes.ok) {
+          userData = await profileRes.json();
         }
 
-        // Store tokens and user data
-        localStorage.setItem("accessToken", data.access);
-        localStorage.setItem("refreshToken", data.refresh);
+        // Store in localStorage or context
+        localStorage.setItem("accessToken", access);
+        localStorage.setItem("refreshToken", refresh);
         if (userData) {
           localStorage.setItem("userData", JSON.stringify(userData));
         }
 
-        // Redirect to dashboard
-        window.location.href = "/student/dashboard";
+        // Optional: use context
+        if (login) login(access, refresh, userData);
+
+        // Redirect
+        navigate("/student/dashboard");
       } else {
-        // Handle API errors
         setError(
           data.detail ||
-            data.message ||
-            "Login failed. Please check your credentials."
+          data.message ||
+          "Login failed. Please check your credentials."
         );
       }
-    } catch (error) {
-      // Handle network errors
-      console.error("Login error:", error);
+    } catch (err) {
+      console.error("Login error:", err);
       setError("Network error. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
@@ -133,9 +132,9 @@ const LoginPage = () => {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="user">User Name</Label>
+                  <Label htmlFor="username">Username</Label>
                   <Input
-                    id="user"
+                    id="username"
                     type="text"
                     placeholder="Enter username"
                     value={formData.username}
@@ -174,16 +173,6 @@ const LoginPage = () => {
                     </Button>
                   </div>
                 </div>
-
-                {/* TODO */}
-                {/* <div className="flex items-center justify-between">
-                  <Link
-                    to="/forgot-password"
-                    className="text-sm text-muted-foreground hover:text-primary"
-                  >
-                    Forgot password?
-                  </Link>
-                </div> */}
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Signing in..." : "Sign in"}
