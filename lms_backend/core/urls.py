@@ -7,6 +7,7 @@ from .views import (
     material_list_create,
     enrollment_list_create,
     question_list_create,
+    student_enrolled_courses,  
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path("materials/", material_list_create, name="material-list-create"),
     path("enrollments/", enrollment_list_create, name="enrollment-list-create"),
     path("questions/", question_list_create, name="question-list-create"),
+    path("student/courses/", student_enrolled_courses, name="student-enrolled-courses"),
 ]

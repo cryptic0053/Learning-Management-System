@@ -2,78 +2,49 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing token on mount
+  // Check if user is already logged in (from localStorage)
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      const accessToken = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("accessToken");
+    const userData = localStorage.getItem("userData");
 
-      if (accessToken) {
-        try {
-          // Verify token and get user info
-          const response = await fetch(
-            "https://lms-backend-xpwc.onrender.com/api/user/profile/student",
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          );
+    if (token && userData) {
+      setUser(JSON.parse(userData));
+    }
 
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
-          } else {
-            // Token might be expired, clear it
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-          }
-        } catch (error) {
-          console.error("Auth check failed:", error);
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-        }
-      }
-
-      setIsLoading(false);
-    };
-
-    checkAuthStatus();
+    setIsLoading(false);
   }, []);
 
-  const login = async (userData, tokens) => {
-    // Store tokens
+  const login = (userData, tokens) => {
     localStorage.setItem("accessToken", tokens.access);
     localStorage.setItem("refreshToken", tokens.refresh);
-
-    // Set user data
+    localStorage.setItem("userData", JSON.stringify(userData));
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userData");
     setUser(null);
   };
 
-  const value = {
-    user,
-    login,
-    logout,
-    isLoading,
-    isAuthenticated: !!user,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        isLoading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

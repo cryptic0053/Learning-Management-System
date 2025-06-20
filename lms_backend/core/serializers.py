@@ -10,6 +10,23 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = '__all__'
+        read_only_fields = ['instructor']  # 💡 This is the key fix
+        extra_kwargs = {
+            'banner': {'required': False},  # Optional for dev
+        }
+
+    def validate_category(self, value):
+        if not isinstance(value, Category):
+            raise serializers.ValidationError("Invalid category ID.")
+        return value
+
+    def validate(self, data):
+        user = self.context.get('request').user
+        if user.role != 'teacher':
+            raise serializers.ValidationError("Only teachers can create courses.")
+        return data
+
+
 
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
