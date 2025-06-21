@@ -1,11 +1,15 @@
-const API_BASE_URL = "https://lms-backend-xpwc.onrender.com/api";
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // Automatically add token if available
+  const token = localStorage.getItem("accessToken");
+
   const defaultOptions = {
     headers: {
       "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),  // ✅ Add Bearer token if exists
       ...options.headers,
     },
     ...options,
@@ -26,7 +30,7 @@ export const apiRequest = async (endpoint, options = {}) => {
   }
 };
 
-// Specific API functions
+// ✅ API wrappers
 export const coursesAPI = {
   getAll: () => apiRequest("/courses/"),
 };

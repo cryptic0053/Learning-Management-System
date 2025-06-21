@@ -7,6 +7,8 @@ import CoursesPage from "./pages/CoursesPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import { CourseDetailsPage } from "./pages/CourseDetailsPage";
 import RequireAuth from "./components/RequireAuth";
+import EditCourse from "./pages/EditCourse";
+import NotFound from "./pages/NotFound";
 
 // ✅ These are the two actual pages you created
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -32,6 +34,7 @@ function App() {
         <Route element={<RequireAuth allowedRoles={["teacher"]} />}>
           <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
           <Route path="/teacher/add-course" element={<AddCourse />} />
+          <Route path="/teacher/edit-course/:id" element={<EditCourse />} />
         </Route>
 
         {/* Fallback Page */}

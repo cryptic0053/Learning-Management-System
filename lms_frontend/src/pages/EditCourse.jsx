@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BASE_URL } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
 
-const AddCourse = () => {
+const EditCourse = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -18,74 +20,96 @@ const AddCourse = () => {
   const [banner, setBanner] = useState(null);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+
+  const token = localStorage.getItem("accessToken");
 
   useEffect(() => {
+    if (!token) navigate("/login");
+  }, [token, navigate]);
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/courses/${id}/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error("Unauthorized");
+        const data = await res.json();
+        setFormData({
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          duration: data.duration,
+          category: data.category, // Should be ID
+        });
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load course. Please login again.");
+      }
+    };
+
     const fetchCategories = async () => {
       try {
         const res = await fetch(`${BASE_URL}/categories/`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         const data = await res.json();
         setCategories(data.results || data);
       } catch (err) {
-        console.error("Failed to fetch categories", err);
+        console.error(err);
+        setCategories([]);
       }
     };
-    fetchCategories();
-  }, []);
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (token) {
+      fetchCourse();
+      fetchCategories();
+    }
+  }, [id, token]);
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      setError("You are not authenticated.");
-      setLoading(false);
-      return;
-    }
-
-    const body = new FormData();
-    body.append("title", formData.title);
-    body.append("description", formData.description);
-    body.append("price", formData.price);
-    body.append("duration", formData.duration);
-    body.append("category", formData.category);
-    if (banner) {
-      body.append("banner", banner);
-    }
+    const form = new FormData();
+    form.append("title", formData.title);
+    form.append("description", formData.description);
+    form.append("price", formData.price);
+    form.append("duration", formData.duration);
+    form.append("category", formData.category);
+    if (banner) form.append("banner", banner);
 
     try {
-      const res = await fetch(`${BASE_URL}/courses/`, {
-        method: "POST",
+      const res = await fetch(`${BASE_URL}/courses/${id}/`, {
+        method: "PATCH", // ✅ Use PATCH, not PUT
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        body,
+        body: form,
       });
 
       const result = await res.json();
       if (res.ok) {
-        setSuccess("Course created successfully!");
-        setTimeout(() => {
-          navigate("/teacher/dashboard");
-        }, 1000);
+        navigate("/teacher/dashboard");
       } else {
-        console.error(result);
-        setError(result.detail || "Course creation failed.");
+        setError(result.detail || "Update failed. Check your inputs.");
       }
     } catch (err) {
-      console.error("Error during creation", err);
-      setError("Something went wrong.");
+      console.error(err);
+      setError("An error occurred while updating the course.");
     } finally {
       setLoading(false);
     }
@@ -94,23 +118,24 @@ const AddCourse = () => {
   return (
     <main className="min-h-screen bg-muted/40 py-10 px-4">
       <div className="max-w-lg mx-auto bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold mb-6 text-center">Add New Course</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">Edit Course</h1>
 
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        {success && (
-          <Alert className="mb-6">
-            <AlertDescription>{success}</AlertDescription>
-          </Alert>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" value={formData.title} onChange={handleChange} required />
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <div>
@@ -118,8 +143,8 @@ const AddCourse = () => {
             <Textarea
               id="description"
               name="description"
-              rows={4}
               value={formData.description}
+              rows={4}
               onChange={handleChange}
               required
             />
@@ -138,6 +163,7 @@ const AddCourse = () => {
                 required
               />
             </div>
+
             <div>
               <Label htmlFor="duration">Duration (hours)</Label>
               <Input
@@ -180,12 +206,11 @@ const AddCourse = () => {
               accept="image/*"
               onChange={(e) => setBanner(e.target.files[0])}
               className="w-full text-sm border rounded p-2"
-              required
             />
           </div>
 
           <Button type="submit" className="w-full mt-4" disabled={loading}>
-            {loading ? "Creating..." : "Create Course"}
+            {loading ? "Updating..." : "Update Course"}
           </Button>
         </form>
       </div>
@@ -193,4 +218,4 @@ const AddCourse = () => {
   );
 };
 
-export default AddCourse;
+export default EditCourse;

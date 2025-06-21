@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const { courses, fetchCourses, deleteCourse } = useCourseStore();
-  const teacherId = JSON.parse(localStorage.getItem("user"))?.id;
+  const teacherId = JSON.parse(localStorage.getItem("userData"))?.id;
 
   useEffect(() => {
     fetchCourses();
@@ -15,11 +15,13 @@ const TeacherDashboard = () => {
   const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this course?")) {
       await deleteCourse(id);
+      fetchCourses(); // refresh after delete
     }
   };
 
   const teacherCourses = courses.filter(
-    (course) => course.instructor?.id === teacherId
+    (course) =>
+      course.instructor === teacherId || course.instructor?.id === teacherId
   );
 
   return (
@@ -54,7 +56,11 @@ const TeacherDashboard = () => {
                 >
                   Edit
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(course.id)}>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(course.id)}
+                >
                   Delete
                 </Button>
               </div>
