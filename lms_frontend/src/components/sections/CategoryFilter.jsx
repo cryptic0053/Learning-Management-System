@@ -1,7 +1,7 @@
 import React from "react";
 
 const CategoryFilter = () => {
-  // https://lms-backend-xpwc.onrender.com/api/courses/
+  // http://127.0.0.1:8000/api/courses/
 
   return <div>CategoryFilter</div>;
 };

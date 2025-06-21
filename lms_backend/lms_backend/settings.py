@@ -77,13 +77,6 @@ DATABASES = {
 AUTH_USER_MODEL = "users.User"
 
 
-# REST Framework
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
-}
-
 
 # JWT Configuration
 SIMPLE_JWT = {
@@ -109,7 +102,12 @@ SWAGGER_SETTINGS = {
 
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True  # For development only
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
 
 # Static and Media Files
 STATIC_URL = "static/"
@@ -124,3 +122,13 @@ USE_I18N = True
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+

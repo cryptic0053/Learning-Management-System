@@ -69,19 +69,17 @@ const StudentDashboard = () => {
           const isCompleted = item.is_completed || progress === 100;
 
           return (
-            <Card key={item.id || course.id}>
-              <CardHeader>
-                <CardTitle>{course.title || "Untitled Course"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm mb-2">
-                  {isCompleted
-                    ? "✅ Completed"
-                    : `🕒 Progress: ${Math.round(progress)}%`}
-                </p>
-                {!isCompleted && <Progress value={Math.round(progress)} />}
-              </CardContent>
-            </Card>
+            <Card key={item.id}>
+  <CardHeader>
+    <CardTitle>{item.course_title || "Untitled Course"}</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <p className="text-sm mb-2">
+      {item.is_completed ? "✅ Completed" : `🕒 Progress: ${Math.round(item.progress)}%`}
+    </p>
+    {!item.is_completed && <Progress value={Math.round(item.progress)} />}
+  </CardContent>
+</Card>
           );
         })}
       </div>

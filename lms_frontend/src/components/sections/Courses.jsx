@@ -2,7 +2,7 @@ import React from 'react'
 
 const Courses = () => {
 
-    // https://lms-backend-xpwc.onrender.com/api/courses/
+    // http://127.0.0.1:8000/api/courses/
 
 
 

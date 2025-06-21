@@ -10,8 +10,8 @@ class CategorySerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     category_title = serializers.CharField(source="category.title", read_only=True)
     lessons = serializers.SerializerMethodField()
-    image = serializers.ImageField(source="banner", read_only=True)
-    instructor = serializers.SerializerMethodField()  # ✅ Updated to return full instructor info
+    image = serializers.SerializerMethodField()
+    instructor = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -30,11 +30,12 @@ class CourseSerializer(serializers.ModelSerializer):
             "username": obj.instructor.username
         }
 
-    def validate(self, data):
-        user = self.context.get("request").user
-        if user.role != "teacher":
-            raise serializers.ValidationError("Only teachers can create courses.")
-        return data
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.banner and request:
+            return request.build_absolute_uri(obj.banner.url)
+        return None
+
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -50,9 +51,12 @@ class MaterialSerializer(serializers.ModelSerializer):
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
+    course_title = serializers.CharField(source="course.title", read_only=True)
+
     class Meta:
         model = Enrollment
-        fields = '__all__'
+        fields = ["id", "course", "course_title", "progress", "is_completed"]
+
 
 
 class QuestionAnswerSerializer(serializers.ModelSerializer):

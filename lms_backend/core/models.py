@@ -1,4 +1,4 @@
-from typing import override
+
 from django.db import models
 from users.models import User
 
@@ -57,7 +57,8 @@ class Enrollment(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    price = models.FloatField()
+
+    price = models.FloatField(null=True, blank=True)  # ✅ fixed here
     progress = models.IntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     total_mark = models.FloatField(default=0)
@@ -65,6 +66,7 @@ class Enrollment(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.course.title}"
+
 
 class QuestionAnswer(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)

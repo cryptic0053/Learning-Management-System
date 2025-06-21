@@ -7,6 +7,7 @@ from .views import (
     material_list_create,
     question_list_create,
     student_enrolled_courses,
+    enroll_in_course,
 )
 
 urlpatterns = [
@@ -16,5 +17,6 @@ urlpatterns = [
     path("lessons/", lesson_list_create),
     path("materials/", material_list_create),
     path("questions/", question_list_create),
-    path("student/courses/", student_enrolled_courses),  # ✅ fixed and working
+    path("student/courses/", student_enrolled_courses),
+    path("student/enroll/", enroll_in_course),
 ]

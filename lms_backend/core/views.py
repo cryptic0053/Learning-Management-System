@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_yasg.utils import swagger_auto_schema
+from django.db import IntegrityError
+from rest_framework.views import exception_handler
 
 from .models import Category, Course, Lesson, Material, Enrollment, QuestionAnswer
 from .serializers import (
@@ -178,3 +180,38 @@ def student_enrolled_courses(request):
     result_page = paginator.paginate_queryset(enrollments, request)
     serializer = EnrollmentSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def enroll_in_course(request):
+    try:
+        print("✅ Request Data:", request.data)
+        print("✅ Authenticated User:", request.user)
+        print("✅ User Role:", request.user.role)
+
+        user = request.user
+        course_id = request.data.get("course_id")
+
+        if not course_id:
+            return Response({"detail": "Course ID is required."}, status=400)
+
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response({"detail": "Course not found."}, status=404)
+
+        # Check if already enrolled
+        if Enrollment.objects.filter(user=user, course=course, is_active=True).exists():
+            return Response({"detail": "Already enrolled in this course."}, status=400)
+
+        # 💥 Try to create enrollment
+        enrollment = Enrollment.objects.create(user=user, course=course, is_active=True)
+
+        serializer = EnrollmentSerializer(enrollment)
+        return Response(serializer.data, status=201)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({"detail": "Database integrity error", "error": str(e)}, status=500)

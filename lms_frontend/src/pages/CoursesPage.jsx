@@ -1,3 +1,5 @@
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,11 +12,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCategoryStore } from "@/store/categoryStore";
 import { useCourseStore } from "@/store/courseStore";
+import { useAuth } from "@/providers/auth";
+import { BASE_URL } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
 
 const CoursesPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const {
     loading,
     categories,
@@ -34,6 +39,42 @@ const CoursesPage = () => {
     activeCategory === "all"
       ? courses
       : courses.filter((course) => course.category === activeCategory);
+
+  const handleEnroll = async (e, courseId) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE_URL}/student/enroll/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ course_id: courseId }),
+      });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server error: invalid JSON response.");
+      }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Enrollment failed.");
+      }
+
+      alert("✅ Enrolled successfully! Check your dashboard.");
+    } catch (err) {
+      alert("❌ " + err.message);
+    }
+  };
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -120,9 +161,26 @@ const CoursesPage = () => {
                           <div className="text-sm text-muted-foreground">
                             {course.duration}
                           </div>
-                          <Button variant="ghost" size="sm">
-                            Learn more
-                          </Button>
+                          {user?.role === "student" ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={(e) => handleEnroll(e, course.id)}
+                            >
+                              Enroll
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate("/login");
+                              }}
+                            >
+                              Enroll
+                            </Button>
+                          )}
                         </CardFooter>
                       </Card>
                     </Link>
