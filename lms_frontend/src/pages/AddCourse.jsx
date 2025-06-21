@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BASE_URL } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
+
 const AddCourse = () => {
   const [formData, setFormData] = useState({
     title: "",
@@ -76,10 +77,12 @@ const AddCourse = () => {
       });
 
       const result = await res.json();
-      if (res.ok) {
-        alert("✅ Course created!");
-        navigate("/teacher/dashboard");
-      } else {
+      if (response.ok) {
+    setSuccess('Course created successfully!');
+    setTimeout(() => {
+        navigate('/'); // Or change to '/all-courses' or '/courses' based on your route
+    }, 1000);
+} else {
         console.error(result);
         setError(result.detail || "Course creation failed.");
       }

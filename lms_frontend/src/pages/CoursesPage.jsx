@@ -12,7 +12,7 @@ import { useCategoryStore } from "@/store/categoryStore";
 import { useCourseStore } from "@/store/courseStore";
 import { ArrowLeft } from "lucide-react";
 import React, { useEffect } from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 const CoursesPage = () => {
   const {
@@ -37,7 +37,6 @@ const CoursesPage = () => {
 
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Header */}
       <section className="w-full py-8 bg-background border-b">
         <div className="container px-4 md:px-6">
           <div className="flex items-center justify-between">
@@ -60,14 +59,13 @@ const CoursesPage = () => {
         </div>
       </section>
 
-      {/* Courses Section */}
       <section className="w-full py-12 md:py-24">
         <div className="container px-4 md:px-6">
-          {/* Categories Tabs */}
           <div className="mb-8">
             <Tabs value={activeCategory} onValueChange={setActiveCategory}>
               <div className="flex justify-center mb-8">
                 <TabsList className="grid grid-flow-col auto-cols-max gap-2">
+                  <TabsTrigger value="all">All Courses</TabsTrigger>
                   {categories.map((category) => (
                     <TabsTrigger key={category.id} value={category.id}>
                       {category.title}
@@ -76,7 +74,6 @@ const CoursesPage = () => {
                 </TabsList>
               </div>
 
-              {/* Courses Grid */}
               <TabsContent value={activeCategory} className="mt-0">
                 <div className="mb-6">
                   <p className="text-muted-foreground">
@@ -96,7 +93,7 @@ const CoursesPage = () => {
                       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                         <div className="aspect-video w-full overflow-hidden">
                           <img
-                            src={course.image || "/placeholder.svg"}
+                            src={course.banner || "/placeholder.svg"}
                             alt={course.title}
                             width={300}
                             height={200}

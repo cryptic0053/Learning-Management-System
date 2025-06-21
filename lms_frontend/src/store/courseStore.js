@@ -1,51 +1,58 @@
-import { BASE_URL } from "@/lib/utils";
 import { create } from "zustand";
+import axios from "axios";
+import { BASE_URL } from "../lib/utils";
 
 export const useCourseStore = create((set) => ({
-  //state
   courses: [],
   singleCourse: null,
   loading: false,
   singleCourseLoading: false,
-  error: null,
-  singleCourseError: null,
 
-  //actions
+  // Fetch all courses
   fetchCourses: async () => {
-    set({ loading: true, error: null });
-
+    set({ loading: true });
     try {
-      const response = await fetch(`${BASE_URL}/courses`);
-      const data = await response.json();
-      set({ courses: data.results, loading: false });
-    } catch (error) {
-      set({
-        error: "Failed to Get Courses",
-        loading: false,
+      const response = await axios.get(`${BASE_URL}/courses/`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
+      set({ courses: response.data.results, loading: false });
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      set({ loading: false });
     }
   },
 
-  fetchCourseById: async (courseId) => {
-    set({ singleCourseLoading: true, singleCourseError: null });
-
+  // Fetch single course by ID
+  fetchCourseById: async (id) => {
+    set({ singleCourseLoading: true });
     try {
-      const response = await fetch(`${BASE_URL}/courses/${courseId}`);
-      const data = await response.json();
-      set({ singleCourse: data, singleCourseLoading: false });
-    } catch (error) {
-      set({
-        singleCourseError: "Failed to Get Course Details",
-        singleCourseLoading: false,
+      const response = await axios.get(`${BASE_URL}/courses/${id}/`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
+      set({ singleCourse: response.data, singleCourseLoading: false });
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      set({ singleCourseLoading: false });
     }
   },
 
-  clearError: () => {
-    set({ error: null });
-  },
-
-  clearSingleCourseError: () => {
-    set({ singleCourseError: null });
+  // Delete course by ID
+  deleteCourse: async (id) => {
+    try {
+      await axios.delete(`${BASE_URL}/courses/${id}/`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      set((state) => ({
+        courses: state.courses.filter((course) => course.id !== id),
+      }));
+    } catch (error) {
+      console.error("Error deleting course:", error);
+    }
   },
 }));

@@ -1,52 +1,68 @@
-// src/pages/TeacherDashboard.jsx
-import React, { useEffect, useState } from "react";
-import { BASE_URL } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useEffect } from "react";
+import { useCourseStore } from "@/store/courseStore";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const TeacherDashboard = () => {
-  const [courses, setCourses] = useState([]);
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { courses, fetchCourses, deleteCourse } = useCourseStore();
+  const teacherId = JSON.parse(localStorage.getItem("user"))?.id;
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
-
-    fetch(`${BASE_URL}/courses/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setCourses(data.results || data))
-      .catch(() => setError("Failed to fetch courses."));
+    fetchCourses();
   }, []);
 
+  const handleDelete = async (id) => {
+    if (confirm("Are you sure you want to delete this course?")) {
+      await deleteCourse(id);
+    }
+  };
+
+  const teacherCourses = courses.filter(
+    (course) => course.instructor?.id === teacherId
+  );
+
   return (
-    <main className="p-6 min-h-screen bg-muted/40">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Your Courses</h1>
-        <Link to="/teacher/add-course">
-          <Button>Add New Course</Button>
-        </Link>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Your Courses</h2>
+        <Button onClick={() => navigate("/teacher/add-course")}>
+          Add New Course
+        </Button>
       </div>
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {courses.map((course) => (
-          <Card key={course.id}>
-            <CardHeader>
-              <CardTitle>{course.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{course.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </main>
+      {teacherCourses.length === 0 ? (
+        <p className="text-muted-foreground">You have not created any courses yet.</p>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4">
+          {teacherCourses.map((course) => (
+            <div key={course.id} className="border p-4 rounded shadow-sm">
+              <img
+                src={course.banner || "/placeholder.svg"}
+                alt={course.title}
+                className="h-40 w-full object-cover mb-2 rounded"
+              />
+              <h3 className="font-semibold">{course.title}</h3>
+              <p className="text-muted-foreground text-sm mb-2">
+                {course.description}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/teacher/edit-course/${course.id}`)}
+                >
+                  Edit
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(course.id)}>
+                  Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

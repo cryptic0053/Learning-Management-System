@@ -1,10 +1,16 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/providers/auth";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();         // Clear localStorage + state
+    navigate("/login"); // Redirect to login page
+  };
 
   return (
     <nav className="w-full border-b bg-background/80 backdrop-blur sticky top-0 z-50">
@@ -30,7 +36,7 @@ const Navbar = () => {
                 </Link>
               )}
 
-              <Button onClick={logout} size="sm">Logout</Button>
+              <Button onClick={handleLogout} size="sm">Logout</Button>
             </>
           ) : (
             <>

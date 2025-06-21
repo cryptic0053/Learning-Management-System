@@ -21,22 +21,23 @@ const StudentDashboard = () => {
       }
 
       try {
-        const res = await fetch(`${BASE_URL}/enrollments/`, {
+        const res = await fetch(`${BASE_URL}/student/courses/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         });
 
-        const data = await res.json();
-        if (res.ok) {
-          setEnrollments(data.results || data); // pagination-safe
-        } else {
-          setError(data.detail || "Failed to load enrolled courses.");
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.detail || "Failed to load enrolled courses.");
         }
+
+        const data = await res.json();
+        setEnrollments(data.results || data); // Support pagination or plain array
       } catch (err) {
         console.error("Fetch failed:", err);
-        setError("Network error. Please try again.");
+        setError(err.message || "Network error. Please try again.");
       } finally {
         setLoading(false);
       }
