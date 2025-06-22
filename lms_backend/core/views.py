@@ -1,12 +1,11 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_yasg.utils import swagger_auto_schema
 from django.db import IntegrityError
-from rest_framework.views import exception_handler
 
 from .models import Category, Course, Lesson, Material, Enrollment, QuestionAnswer
 from .serializers import (
@@ -19,7 +18,6 @@ from .serializers import (
 )
 
 
-# Custom paginator for all list views
 class MyPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = "limit"
@@ -30,7 +28,7 @@ class MyPagination(PageNumberPagination):
 
 @swagger_auto_schema(method="post", request_body=CategorySerializer)
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # ✅ Anyone can view categories
 def category_list_create(request):
     if request.method == "GET":
         categories = Category.objects.all()
@@ -39,7 +37,7 @@ def category_list_create(request):
         serializer = CategorySerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
-    if request.user.role != "admin":
+    if not request.user.is_authenticated or request.user.role != "admin":
         return Response({"detail": "Only admin can create categories."}, status=403)
 
     serializer = CategorySerializer(data=request.data)
@@ -49,22 +47,22 @@ def category_list_create(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ------------------------ Course List Create ------------------------
+# ------------------------ Course List/Create ------------------------
 
 @swagger_auto_schema(method="post", request_body=CourseSerializer)
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # ✅ Public can view courses
 @parser_classes([MultiPartParser, FormParser])
 def course_list_create(request):
     if request.method == "GET":
         courses = Course.objects.all()
         paginator = MyPagination()
         result_page = paginator.paginate_queryset(courses, request)
-        serializer = CourseSerializer(result_page, many=True)
+        serializer = CourseSerializer(result_page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
-    if request.user.role != "teacher":
-        return Response({"detail": "Only teachers can create courses."}, status=403)
+    if not request.user.is_authenticated or request.user.role != "teacher":
+        return Response({"detail": "Only authenticated teachers can create courses."}, status=403)
 
     serializer = CourseSerializer(data=request.data, context={"request": request})
     if serializer.is_valid():
@@ -77,7 +75,7 @@ def course_list_create(request):
 
 @swagger_auto_schema(methods=["patch", "put"], request_body=CourseSerializer)
 @api_view(["GET", "PATCH", "PUT", "DELETE"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # ✅ Public can view course detail
 @parser_classes([MultiPartParser, FormParser])
 def course_detail(request, pk):
     try:
@@ -86,13 +84,13 @@ def course_detail(request, pk):
         return Response({"detail": "Course not found"}, status=404)
 
     if request.method == "GET":
-        serializer = CourseSerializer(course)
+        serializer = CourseSerializer(course, context={"request": request})
         return Response(serializer.data)
 
-    if request.method in ["PATCH", "PUT"]:
-        if request.user != course.instructor:
-            return Response({"detail": "Only the course owner can update this course."}, status=403)
+    if not request.user.is_authenticated or request.user != course.instructor:
+        return Response({"detail": "Only the course owner can modify or delete."}, status=403)
 
+    if request.method in ["PATCH", "PUT"]:
         partial = request.method == "PATCH"
         serializer = CourseSerializer(course, data=request.data, partial=partial, context={"request": request})
         if serializer.is_valid():
@@ -101,8 +99,6 @@ def course_detail(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     if request.method == "DELETE":
-        if request.user != course.instructor:
-            return Response({"detail": "Only the course owner can delete this course."}, status=403)
         course.delete()
         return Response({"detail": "Course deleted"}, status=status.HTTP_204_NO_CONTENT)
 
@@ -186,32 +182,22 @@ def student_enrolled_courses(request):
 @permission_classes([IsAuthenticated])
 def enroll_in_course(request):
     try:
-        print("✅ Request Data:", request.data)
-        print("✅ Authenticated User:", request.user)
-        print("✅ User Role:", request.user.role)
-
         user = request.user
         course_id = request.data.get("course_id")
 
         if not course_id:
             return Response({"detail": "Course ID is required."}, status=400)
 
-        try:
-            course = Course.objects.get(id=course_id)
-        except Course.DoesNotExist:
-            return Response({"detail": "Course not found."}, status=404)
+        course = Course.objects.get(id=course_id)
 
-        # Check if already enrolled
         if Enrollment.objects.filter(user=user, course=course, is_active=True).exists():
             return Response({"detail": "Already enrolled in this course."}, status=400)
 
-        # 💥 Try to create enrollment
         enrollment = Enrollment.objects.create(user=user, course=course, is_active=True)
-
         serializer = EnrollmentSerializer(enrollment)
         return Response(serializer.data, status=201)
 
+    except Course.DoesNotExist:
+        return Response({"detail": "Course not found."}, status=404)
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return Response({"detail": "Database integrity error", "error": str(e)}, status=500)
+        return Response({"detail": "Error", "error": str(e)}, status=500)

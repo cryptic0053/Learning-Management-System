@@ -134,7 +134,7 @@ const CoursesPage = () => {
                       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                         <div className="aspect-video w-full overflow-hidden">
                           <img
-                            src={course.banner || "/placeholder.svg"}
+                            src={course.image || "/placeholder.svg"}
                             alt={course.title}
                             width={300}
                             height={200}

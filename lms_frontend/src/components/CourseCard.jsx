@@ -14,7 +14,7 @@ const CourseCard = ({ course, onEnroll }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden w-full">
       <img
-        src={`http://localhost:8000${image}`}  // ✅ This fixes the image path
+        src={image}  // ✅ This fixes the image path
         alt={title}
         className="w-full h-40 object-cover"
         onError={(e) => (e.target.style.display = "none")}
