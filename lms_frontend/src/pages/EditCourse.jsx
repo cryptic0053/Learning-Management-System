@@ -24,6 +24,8 @@ const EditCourse = () => {
 
   const token = localStorage.getItem("accessToken");
 
+  
+
   useEffect(() => {
     if (!token) navigate("/login");
   }, [token, navigate]);

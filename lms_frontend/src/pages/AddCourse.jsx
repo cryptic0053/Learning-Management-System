@@ -22,6 +22,8 @@ const AddCourse = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {

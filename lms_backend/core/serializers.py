@@ -8,33 +8,38 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    category_title = serializers.CharField(source="category.title", read_only=True)
+    category = serializers.SerializerMethodField()
+    instructor = serializers.SerializerMethodField()
     lessons = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
-    instructor = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = "__all__"
-        read_only_fields = ["instructor", "category_title"]
-        extra_kwargs = {
-            "banner": {"required": False},
-        }
+        read_only_fields = ["instructor"]
 
-    def get_lessons(self, obj):
-        return obj.lesson_set.count()
+    def get_category(self, obj):
+        return {
+            "id": obj.category.id,
+            "title": obj.category.title
+        }
 
     def get_instructor(self, obj):
         return {
             "id": obj.instructor.id,
-            "username": obj.instructor.username
+            "username": obj.instructor.username,
+            "full_name": obj.instructor.get_full_name()  # ✅ add this only if you use first_name + last_name
         }
+
+    def get_lessons(self, obj):
+        return obj.lesson_set.count()
 
     def get_image(self, obj):
         request = self.context.get("request")
         if obj.banner and request:
             return request.build_absolute_uri(obj.banner.url)
         return None
+
 
 
 

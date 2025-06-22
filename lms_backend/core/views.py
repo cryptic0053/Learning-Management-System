@@ -201,3 +201,27 @@ def enroll_in_course(request):
         return Response({"detail": "Course not found."}, status=404)
     except Exception as e:
         return Response({"detail": "Error", "error": str(e)}, status=500)
+
+
+@api_view(["GET", "PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def lesson_detail(request, pk):
+    try:
+        lesson = Lesson.objects.get(pk=pk)
+    except Lesson.DoesNotExist:
+        return Response({"detail": "Lesson not found"}, status=404)
+
+    if request.method == "GET":
+        serializer = LessonSerializer(lesson)
+        return Response(serializer.data)
+
+    if request.method == "PATCH":
+        serializer = LessonSerializer(lesson, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    if request.method == "DELETE":
+        lesson.delete()
+        return Response({"detail": "Lesson deleted successfully"}, status=204)
