@@ -9,6 +9,7 @@ from .views import (
     student_enrolled_courses,
     enroll_in_course,
     lesson_detail,
+    teacher_courses,
 )
 
 urlpatterns = [
@@ -21,5 +22,5 @@ urlpatterns = [
     path("student/courses/", student_enrolled_courses),
     path("student/enroll/", enroll_in_course),
     path("lessons/<int:pk>/", lesson_detail),
-
+    path("teacher/courses/", teacher_courses),
 ]

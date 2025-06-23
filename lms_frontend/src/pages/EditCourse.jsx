@@ -10,6 +10,8 @@ import { BASE_URL } from "@/lib/utils";
 const EditCourse = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const token = localStorage.getItem("accessToken");
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -19,111 +21,107 @@ const EditCourse = () => {
   });
   const [banner, setBanner] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [lessons, setLessons] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const token = localStorage.getItem("accessToken");
-
-  
-
+  // Load course info, categories, and lessons
   useEffect(() => {
-    if (!token) navigate("/login");
-  }, [token, navigate]);
+    const fetchAll = async () => {
+  try {
+    const [courseRes, categoryRes, lessonRes] = await Promise.all([
+      fetch(`${BASE_URL}/courses/${id}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`${BASE_URL}/categories/`),
+      fetch(`${BASE_URL}/lessons/?course_id=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
 
-  useEffect(() => {
-    const fetchCourse = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/courses/${id}/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error("Unauthorized");
-        const data = await res.json();
-        setFormData({
-          title: data.title,
-          description: data.description,
-          price: data.price,
-          duration: data.duration,
-          category: data.category, // Should be ID
-        });
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load course. Please login again.");
-      }
-    };
+    const courseData = await courseRes.json();
+    const categoryData = await categoryRes.json();
+    const lessonData = await lessonRes.json();
 
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/categories/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-        setCategories(data.results || data);
-      } catch (err) {
-        console.error(err);
-        setCategories([]);
-      }
-    };
+    setFormData({
+      title: courseData.title,
+      description: courseData.description,
+      price: courseData.price,
+      duration: courseData.duration,
+      category: courseData.category.id,
+    });
 
-    if (token) {
-      fetchCourse();
-      fetchCategories();
-    }
-  }, [id, token]);
+    setCategories(categoryData.results || categoryData);
+    setLessons(lessonData.results || []);
+  } catch (err) {
+    console.error(err);
+    setError("Failed to load course data.");
+  }
+};
+
+
+    if (token) fetchAll();
+    else navigate("/login");
+  }, [id, token, navigate]);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
     const form = new FormData();
-    form.append("title", formData.title);
-    form.append("description", formData.description);
-    form.append("price", formData.price);
-    form.append("duration", formData.duration);
-    form.append("category", formData.category);
+    Object.entries(formData).forEach(([key, val]) => form.append(key, val));
     if (banner) form.append("banner", banner);
 
     try {
       const res = await fetch(`${BASE_URL}/courses/${id}/`, {
-        method: "PATCH", // ✅ Use PATCH, not PUT
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
         body: form,
       });
 
       const result = await res.json();
-      if (res.ok) {
-        navigate("/teacher/dashboard");
-      } else {
-        setError(result.detail || "Update failed. Check your inputs.");
-      }
+      if (!res.ok) throw new Error(result.detail || "Update failed.");
+
+      navigate("/teacher/dashboard");
     } catch (err) {
-      console.error(err);
-      setError("An error occurred while updating the course.");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDeleteLesson = async (lessonId) => {
+    if (!confirm("Are you sure you want to delete this lesson?")) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/lessons/${lessonId}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setLessons(prev => prev.filter(lesson => lesson.id !== lessonId));
+      } else {
+        throw new Error("Delete failed.");
+      }
+    } catch (err) {
+      alert("Error deleting lesson.");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-muted/40 py-10 px-4">
-      <div className="max-w-lg mx-auto bg-white rounded-lg shadow-md p-8">
+      <div className="max-w-xl mx-auto bg-white rounded-lg shadow-md p-8">
         <h1 className="text-3xl font-bold mb-6 text-center">Edit Course</h1>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="destructive" className="mb-4">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
@@ -131,13 +129,7 @@ const EditCourse = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              required
-            />
+            <Input id="title" name="title" value={formData.title} onChange={handleChange} required />
           </div>
 
           <div>
@@ -146,48 +138,30 @@ const EditCourse = () => {
               id="description"
               name="description"
               value={formData.description}
-              rows={4}
               onChange={handleChange}
+              rows={4}
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="price">Price ($)</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                min="0"
-                value={formData.price}
-                onChange={handleChange}
-                required
-              />
+              <Label htmlFor="price">Price</Label>
+              <Input type="number" name="price" value={formData.price} onChange={handleChange} required />
             </div>
-
             <div>
-              <Label htmlFor="duration">Duration (hours)</Label>
-              <Input
-                id="duration"
-                name="duration"
-                type="number"
-                min="0"
-                value={formData.duration}
-                onChange={handleChange}
-                required
-              />
+              <Label htmlFor="duration">Duration (hrs)</Label>
+              <Input type="number" name="duration" value={formData.duration} onChange={handleChange} required />
             </div>
           </div>
 
           <div>
             <Label htmlFor="category">Category</Label>
             <select
-              id="category"
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2"
               required
             >
               <option value="">Select category</option>
@@ -201,20 +175,56 @@ const EditCourse = () => {
 
           <div>
             <Label htmlFor="banner">Course Banner</Label>
-            <input
-              type="file"
-              id="banner"
-              name="banner"
-              accept="image/*"
-              onChange={(e) => setBanner(e.target.files[0])}
-              className="w-full text-sm border rounded p-2"
-            />
+            <Input type="file" accept="image/*" onChange={(e) => setBanner(e.target.files[0])} />
           </div>
 
           <Button type="submit" className="w-full mt-4" disabled={loading}>
             {loading ? "Updating..." : "Update Course"}
           </Button>
         </form>
+
+        {/* --- Lessons Section --- */}
+        <hr className="my-8" />
+        <div>
+          <h2 className="text-xl font-semibold mb-3">Lessons / Modules</h2>
+          <Button onClick={() => navigate(`/teacher/add-lesson/${id}`)} className="mb-4">
+            ➕ Add Lesson
+          </Button>
+
+          {lessons.length === 0 ? (
+            <p className="text-muted-foreground">No lessons yet.</p>
+          ) : (
+            <ul className="space-y-4">
+              {lessons.map((lesson) => (
+                <li
+                  key={lesson.id}
+                  className="p-4 border rounded flex justify-between items-start"
+                >
+                  <div>
+                    <p className="font-bold">{lesson.title}</p>
+                    <p className="text-sm text-muted-foreground">{lesson.description}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/teacher/edit-lesson/${lesson.id}`)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteLesson(lesson.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </main>
   );

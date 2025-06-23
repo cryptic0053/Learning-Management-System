@@ -1,56 +1,40 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/providers/auth";
-import { BASE_URL } from "@/lib/utils";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const StudentDashboard = () => {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
+
+  const fetchEnrollments = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("http://localhost:8000/api/student/courses/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch enrollments");
+      const data = await res.json();
+      setEnrollments(data.results || data);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
+  };
 
   useEffect(() => {
-    const fetchEnrollments = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setError("Unauthorized. Please log in.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch(`${BASE_URL}/student/courses/`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.detail || "Failed to load enrolled courses.");
-        }
-
-        const data = await res.json();
-        setEnrollments(data.results || data); // Support pagination or plain array
-      } catch (err) {
-        console.error("Fetch failed:", err);
-        setError(err.message || "Network error. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEnrollments();
   }, []);
 
   return (
-    <main className="min-h-screen p-6 bg-muted/40">
-      <h1 className="text-3xl font-bold mb-6">Welcome, {user?.username}</h1>
-
-      {loading && <p>Loading your enrolled courses...</p>}
+    <main className="p-6 min-h-screen bg-muted/40">
+      <h1 className="text-2xl font-semibold mb-6">Welcome, {user?.username}</h1>
 
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -58,28 +42,44 @@ const StudentDashboard = () => {
         </Alert>
       )}
 
-      {enrollments.length === 0 && !loading && !error && (
-        <p className="text-gray-600 text-sm">No enrollments yet.</p>
+      {enrollments.length === 0 && !error && (
+        <p className="text-sm text-gray-500">You haven't enrolled in any courses yet.</p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {enrollments.map((item) => {
-          const course = item.course || {};
-          const progress = item.progress || 0;
-          const isCompleted = item.is_completed || progress === 100;
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {enrollments.map((enroll) => {
+          console.log("ENROLL DEBUG:", enroll);
+
+          const course = enroll.course || {};
+          const courseTitle =
+            course.course_title || course.title || course.name || `Course ID ${enroll.course_id}`;
+          const imageUrl = course.image
+            ? course.image.startsWith("http")
+              ? course.image
+              : `http://localhost:8000${course.image}`
+            : null;
 
           return (
-            <Card key={item.id}>
-  <CardHeader>
-    <CardTitle>{item.course_title || "Untitled Course"}</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <p className="text-sm mb-2">
-      {item.is_completed ? "✅ Completed" : `🕒 Progress: ${Math.round(item.progress)}%`}
-    </p>
-    {!item.is_completed && <Progress value={Math.round(item.progress)} />}
-  </CardContent>
-</Card>
+            <Card key={`enroll-${enroll.id || enroll.course_id || Math.random()}`}>
+              <CardHeader>
+                <CardTitle>{courseTitle}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {imageUrl && (
+                  <img
+                    src={imageUrl}
+                    alt={courseTitle}
+                    className="h-40 w-full object-cover rounded mb-3"
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+                )}
+                <p className="text-sm">Progress: {enroll.progress || 0}%</p>
+                <Progress value={enroll.progress || 0} className="mt-2" />
+                {enroll.is_completed && (
+                  <p className="text-green-600 font-medium mt-2">Completed ✅</p>
+                )}
+              </CardContent>
+            </Card>
           );
         })}
       </div>

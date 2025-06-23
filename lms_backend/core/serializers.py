@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Category, Course, Lesson, Material, Enrollment, QuestionAnswer
 
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -15,24 +16,30 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = "__all__"
+        fields = [
+            "id", "title", "description", "price", "duration", "category",
+            "instructor", "lessons", "image", "is_active", "created_at", "updated_at"
+        ]
         read_only_fields = ["instructor"]
 
     def get_category(self, obj):
         return {
             "id": obj.category.id,
             "title": obj.category.title
-        }
+        } if obj.category else None
 
     def get_instructor(self, obj):
         return {
             "id": obj.instructor.id,
             "username": obj.instructor.username,
-            "full_name": obj.instructor.get_full_name()  # ✅ add this only if you use first_name + last_name
-        }
+            "full_name": obj.instructor.get_full_name()
+        } if obj.instructor else None
 
     def get_lessons(self, obj):
-        return obj.lesson_set.count()
+        from .models import Lesson
+        count = Lesson.objects.filter(course=obj).count()
+        print(f"[DEBUG] Course: {obj.id} - '{obj.title}' has {count} lessons.")
+        return count
 
     def get_image(self, obj):
         request = self.context.get("request")
@@ -41,12 +48,18 @@ class CourseSerializer(serializers.ModelSerializer):
         return None
 
 
-
-
 class LessonSerializer(serializers.ModelSerializer):
+    course = serializers.SerializerMethodField()
+
     class Meta:
         model = Lesson
-        fields = '__all__'
+        fields = ['id', 'title', 'description', 'course', 'video']
+
+    def get_course(self, obj):
+        return {
+            "id": obj.course.id,
+            "title": obj.course.title,
+        }
 
 
 class MaterialSerializer(serializers.ModelSerializer):
@@ -56,12 +69,14 @@ class MaterialSerializer(serializers.ModelSerializer):
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    course_title = serializers.CharField(source="course.title", read_only=True)
+    course = serializers.SerializerMethodField()
 
     class Meta:
         model = Enrollment
-        fields = ["id", "course", "course_title", "progress", "is_completed"]
+        fields = ['id', 'course', 'progress', 'is_completed']
 
+    def get_course(self, obj):
+        return CourseSerializer(obj.course, context=self.context).data
 
 
 class QuestionAnswerSerializer(serializers.ModelSerializer):

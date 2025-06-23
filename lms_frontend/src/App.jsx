@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router";
+import { Route, Routes } from "react-router-dom";
 import MainLayout from "./layout/MainLayout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -9,6 +9,14 @@ import { CourseDetailsPage } from "./pages/CourseDetailsPage";
 import RequireAuth from "./components/RequireAuth";
 import EditCourse from "./pages/EditCourse";
 import NotFound from "./pages/NotFound";
+import AddLesson from "./pages/AddLesson";
+import AddMaterial from "./pages/AddMaterial";
+import EditMaterial from "./pages/EditMaterial";
+import EditLesson from "./pages/EditLesson";
+import CourseLessonsPage from "./pages/CourseLessonsPage";
+
+
+
 
 // ✅ These are the two actual pages you created
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -28,6 +36,7 @@ function App() {
         {/* ✅ Protected for Student */}
         <Route element={<RequireAuth allowedRoles={["student"]} />}>
           <Route path="/student/dashboard" element={<StudentDashboard />} />
+          <Route path="/courses/:courseId/lessons" element={<CourseLessonsPage />} />
         </Route>
 
         {/* ✅ Protected for Teacher */}
@@ -35,6 +44,11 @@ function App() {
           <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
           <Route path="/teacher/add-course" element={<AddCourse />} />
           <Route path="/teacher/edit-course/:id" element={<EditCourse />} />
+          <Route path="/teacher/add-lesson/:courseId" element={<AddLesson />} />
+          <Route path="/teacher/add-material/:courseId" element={<AddMaterial />} />
+          <Route path="/teacher/edit-material/:materialId" element={<EditMaterial />} />
+          <Route path="/teacher/edit-lesson/:lessonId" element={<EditLesson />} />
+
         </Route>
 
         {/* Fallback Page */}
