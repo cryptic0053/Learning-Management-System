@@ -9,15 +9,21 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    const userData = localStorage.getItem("userData");
+  const token = localStorage.getItem("accessToken");
+  const userData = localStorage.getItem("userData");
 
-    if (token && userData) {
+  if (token && userData) {
+    try {
       setUser(JSON.parse(userData));
+    } catch (error) {
+      console.error("Failed to parse userData:", error);
+      localStorage.removeItem("userData"); // optional cleanup
     }
+  }
 
-    setIsLoading(false);
-  }, []);
+  setIsLoading(false);
+}, []);
+
 
   const login = (userData, tokens) => {
     localStorage.setItem("accessToken", tokens.access);
