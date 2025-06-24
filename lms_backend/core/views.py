@@ -107,7 +107,7 @@ def course_detail(request, pk):
 
 @swagger_auto_schema(method="post", request_body=LessonSerializer)
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # 👈 Anyone can GET lessons now
 def lesson_list_create(request):
     if request.method == "GET":
         lessons = Lesson.objects.all()

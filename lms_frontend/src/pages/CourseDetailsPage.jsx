@@ -17,38 +17,38 @@ export const CourseDetailsPage = () => {
   const token = localStorage.getItem("accessToken");
 
   useEffect(() => {
-    const fetchCourseAndLessons = async () => {
-      try {
-        const courseRes = await fetch(`${BASE_URL}/courses/${courseId}/`);
-        const courseData = await courseRes.json();
-        setCourse(courseData);
+  const fetchCourseAndLessons = async () => {
+    try {
+      const courseRes = await fetch(`${BASE_URL}/courses/${courseId}/`);
+      const courseData = await courseRes.json();
+      setCourse(courseData);
 
-        const lessonRes = await fetch(`${BASE_URL}/lessons/?course_id=${courseId}`, {
+      const lessonRes = await fetch(`${BASE_URL}/lessons/?course_id=${courseId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const lessonData = await lessonRes.json();
-        const allLessons = lessonData.results || lessonData;
+      const lessonData = await lessonRes.json();
+      const allLessons = lessonData.results || lessonData;
 
-        const courseLessons = allLessons.filter(
-          (lesson) =>
-            lesson.course === courseData.id || lesson.course?.id === courseData.id
-        );
-        setLessons(courseLessons);
-      } catch (err) {
-        console.error("Error loading course/lessons:", err);
-        setLessonError("Failed to load course or lessons.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const courseLessons = allLessons.filter(
+        (lesson) =>
+          lesson.course === courseData.id || lesson.course?.id === courseData.id
+      );
 
-    if (courseId && token) {
-      fetchCourseAndLessons();
+      setLessons(courseLessons);
+    } catch (err) {
+      console.error("Error loading course/lessons:", err);
+      setLessonError("Failed to load course or lessons.");
+    } finally {
+      setLoading(false);
     }
-  }, [courseId, token]);
+  };
+
+  if (courseId) {
+    fetchCourseAndLessons(); // ✅ token not required anymore
+  }
+}, [courseId, token]);
+
 
   const handleEnroll = async () => {
     if (!token || !user) {
