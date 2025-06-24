@@ -10,6 +10,11 @@ from .views import (
     enroll_in_course,
     lesson_detail,
     teacher_courses,
+    mark_lesson_complete,
+    get_course_progress,
+    get_course_lessons,
+    complete_lesson,
+    completed_lessons,
 )
 
 urlpatterns = [
@@ -23,4 +28,9 @@ urlpatterns = [
     path("student/enroll/", enroll_in_course),
     path("lessons/<int:pk>/", lesson_detail),
     path("teacher/courses/", teacher_courses),
+    path("student/lesson-complete/", mark_lesson_complete),
+    path("student/progress/<int:course_id>/", get_course_progress),
+    path("courses/<int:course_id>/lessons/", get_course_lessons),  # ✅ fixed here
+    path("student/complete-lesson/", complete_lesson),
+    path("student/completed-lessons/<int:course_id>/", completed_lessons),
 ]

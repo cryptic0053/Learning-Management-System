@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Course, Lesson, Material, Enrollment, QuestionAnswer
+from .models import Category, Course, Lesson, Material, Enrollment, QuestionAnswer, LessonCompletion
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -49,7 +49,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
 
 class LessonSerializer(serializers.ModelSerializer):
-    course = serializers.SerializerMethodField()
+    course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all())
 
     class Meta:
         model = Lesson
@@ -83,3 +83,16 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionAnswer
         fields = '__all__'
+
+
+class LessonCompletionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonCompletion
+        fields = ['id', 'student', 'lesson', 'completed_at']
+        read_only_fields = ['student', 'completed_at']
+
+class LessonCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lesson
+        fields = ['title', 'description', 'video', 'course']
+
