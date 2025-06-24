@@ -11,6 +11,11 @@ export default defineConfig({
     },
   },
   server: {
-    historyApiFallback: true, // ✅ fix for react-router-dom route reload
+    historyApiFallback: true,
   },
+  build: {
+    outDir: '../lms_backend/frontend_build',  // ✅ ensure this matches Django setup
+    emptyOutDir: true,
+  },
+  base: '/', // ✅ this is critical for correct asset path resolution
 })
