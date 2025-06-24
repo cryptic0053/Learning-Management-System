@@ -110,9 +110,17 @@ CORS_ALLOWED_ORIGINS = [
 
 
 # Static and Media Files
-STATIC_URL = "static/"
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# Static and Media Files
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'frontend_build', 'assets')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Serve React HTML
+TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'frontend_build')]
+
 
 
 # Internationalization
