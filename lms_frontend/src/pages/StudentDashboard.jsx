@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -48,8 +49,6 @@ const StudentDashboard = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {enrollments.map((enroll) => {
-          console.log("ENROLL DEBUG:", enroll);
-
           const course = enroll.course || {};
           const courseTitle =
             course.course_title || course.title || course.name || `Course ID ${enroll.course_id}`;
@@ -59,27 +58,35 @@ const StudentDashboard = () => {
               : `http://localhost:8000${course.image}`
             : null;
 
+          const courseId = course.id || enroll.course_id;
+
           return (
-            <Card key={`enroll-${enroll.id || enroll.course_id || Math.random()}`}>
-              <CardHeader>
-                <CardTitle>{courseTitle}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {imageUrl && (
-                  <img
-                    src={imageUrl}
-                    alt={courseTitle}
-                    className="h-40 w-full object-cover rounded mb-3"
-                    onError={(e) => (e.target.style.display = "none")}
-                  />
-                )}
-                <p className="text-sm">Progress: {enroll.progress || 0}%</p>
-                <Progress value={enroll.progress || 0} className="mt-2" />
-                {enroll.is_completed && (
-                  <p className="text-green-600 font-medium mt-2">Completed ✅</p>
-                )}
-              </CardContent>
-            </Card>
+            <Link
+              to={`/course/${courseId}`}
+              key={`enroll-${enroll.id || courseId}`}
+              className="hover:shadow-lg transition-shadow duration-300"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>{courseTitle}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {imageUrl && (
+                    <img
+                      src={imageUrl}
+                      alt={courseTitle}
+                      className="h-40 w-full object-cover rounded mb-3"
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  )}
+                  <p className="text-sm">Progress: {enroll.progress || 0}%</p>
+                  <Progress value={enroll.progress || 0} className="mt-2" />
+                  {enroll.is_completed && (
+                    <p className="text-green-600 font-medium mt-2">Completed ✅</p>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
           );
         })}
       </div>

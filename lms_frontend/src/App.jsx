@@ -37,6 +37,7 @@ function App() {
         <Route element={<RequireAuth allowedRoles={["student"]} />}>
           <Route path="/student/dashboard" element={<StudentDashboard />} />
           <Route path="/courses/:courseId/lessons" element={<CourseLessonsPage />} />
+          <Route path="/course/:courseId" element={<CourseLessonsPage />} />
         </Route>
 
         {/* ✅ Protected for Teacher */}

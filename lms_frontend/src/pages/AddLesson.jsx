@@ -24,22 +24,29 @@ const AddLesson = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     const token = localStorage.getItem("accessToken");
 
     try {
+      const formData = new FormData();
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("video", form.video);
+      formData.append("course", courseId);
+
       const res = await fetch(`${BASE_URL}/lessons/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...form, course: courseId }),
+        body: formData,
       });
+
+      const data = await res.json();
 
       if (res.ok) {
         navigate(`/teacher/edit-course/${courseId}`);
       } else {
-        const data = await res.json();
         setError(data.detail || "Error creating lesson.");
       }
     } catch (err) {
