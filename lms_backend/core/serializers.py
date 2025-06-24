@@ -96,3 +96,7 @@ class LessonCreateSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = ['title', 'description', 'video', 'course']
 
+class CourseCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ['title', 'description', 'price', 'duration', 'category', 'banner']

@@ -6,6 +6,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_yasg.utils import swagger_auto_schema
 from django.db import IntegrityError
+from rest_framework import viewsets
+from .models import Course
+from .serializers import CourseSerializer
 
 from .models import Category, Course, Lesson, Material, Enrollment, QuestionAnswer, LessonCompletion
 from .serializers import (
@@ -15,6 +18,7 @@ from .serializers import (
     MaterialSerializer,
     EnrollmentSerializer,
     QuestionAnswerSerializer,
+    CourseCreateSerializer,
 )
 
 
@@ -49,26 +53,22 @@ def category_list_create(request):
 
 # ------------------------ Course List/Create ------------------------
 
-@swagger_auto_schema(method="post", request_body=CourseSerializer)
+@swagger_auto_schema(method="post", request_body=CourseCreateSerializer)
 @api_view(["GET", "POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def course_list_create(request):
     if request.method == "GET":
         courses = Course.objects.all()
-        paginator = MyPagination()
-        result_page = paginator.paginate_queryset(courses, request)
-        serializer = CourseSerializer(result_page, many=True, context={"request": request})
-        return paginator.get_paginated_response(serializer.data)
+        serializer = CourseSerializer(courses, many=True, context={"request": request})
+        return Response(serializer.data)
 
-    if not request.user.is_authenticated or request.user.role != "teacher":
-        return Response({"detail": "Only authenticated teachers can create courses."}, status=403)
-
-    serializer = CourseSerializer(data=request.data, context={"request": request})
-    if serializer.is_valid():
-        serializer.save(instructor=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == "POST":
+        serializer = CourseCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(instructor=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ------------------------ Course Detail ------------------------
@@ -480,3 +480,21 @@ def create_lesson(request):
     except Exception as e:
         print("❌ Add lesson error:", str(e))
         return Response({"error": "Internal Server Error", "details": str(e)}, status=500)
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+@permission_classes([IsAuthenticated])
+def create_course(request):
+    serializer = CourseSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(instructor=request.user)  # ✅ Use instructor
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CourseViewSet(viewsets.ModelViewSet):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(instructor=self.request.user)

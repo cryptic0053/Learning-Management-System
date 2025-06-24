@@ -18,6 +18,8 @@ import CourseLessonsPage from "./pages/CourseLessonsPage";
 
 
 
+
+
 // ✅ These are the two actual pages you created
 import TeacherDashboard from "./pages/TeacherDashboard";
 import AddCourse from "./pages/AddCourse";

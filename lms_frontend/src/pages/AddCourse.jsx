@@ -22,8 +22,6 @@ const AddCourse = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  
-
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -46,24 +44,20 @@ const AddCourse = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
+    setSuccess("");
 
     const token = localStorage.getItem("accessToken");
-    if (!token) {
-      setError("You are not authenticated.");
-      setLoading(false);
-      return;
-    }
 
-    const body = new FormData();
-    body.append("title", formData.title);
-    body.append("description", formData.description);
-    body.append("price", formData.price);
-    body.append("duration", formData.duration);
-    body.append("category", formData.category);
+    const submissionData = new FormData();
+    submissionData.append("title", formData.title);
+    submissionData.append("description", formData.description);
+    submissionData.append("price", formData.price);
+    submissionData.append("duration", formData.duration);
+    submissionData.append("category", formData.category);
     if (banner) {
-      body.append("banner", banner);
+      submissionData.append("banner", banner); // ✅ use correct field name
     }
 
     try {
@@ -71,11 +65,13 @@ const AddCourse = () => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          // ❗ DON'T set Content-Type manually with FormData
         },
-        body,
+        body: submissionData,
       });
 
       const result = await res.json();
+
       if (res.ok) {
         setSuccess("Course created successfully!");
         setTimeout(() => {
@@ -112,7 +108,13 @@ const AddCourse = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" value={formData.title} onChange={handleChange} required />
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <div>
@@ -157,20 +159,21 @@ const AddCourse = () => {
           <div>
             <Label htmlFor="category">Category</Label>
             <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2 text-sm"
-              required
-            >
-              <option value="">Select category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.title}
-                </option>
-              ))}
-            </select>
+  value={formData.category}
+  onChange={(e) =>
+    setFormData({ ...formData, category: parseInt(e.target.value) })
+  }
+  required
+>
+
+  <option value="">Select Category</option>
+  {categories.map((cat) => (
+    <option key={cat.id} value={cat.id}>
+      {cat.title}
+    </option>
+  ))}
+</select>
+
           </div>
 
           <div>

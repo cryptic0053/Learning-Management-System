@@ -33,16 +33,21 @@ const TeacherDashboard = () => {
   };
 
   const handleDeleteCourse = async (courseId) => {
-    const confirmed = window.confirm("Are you sure you want to delete this course?");
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this course?"
+    );
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`http://localhost:8000/api/courses/${courseId}/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://localhost:8000/api/courses/${courseId}/`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to delete course");
 
@@ -60,6 +65,12 @@ const TeacherDashboard = () => {
   return (
     <main className="p-6 min-h-screen bg-muted/40">
       <h1 className="text-2xl font-semibold mb-6">Welcome, {user?.username}</h1>
+      <Button
+        onClick={() => navigate("/teacher/add-course")}
+        className="mb-6 bg-black text-white hover:bg-gray-800"
+      >
+        ➕ Create New Course
+      </Button>
 
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -68,7 +79,9 @@ const TeacherDashboard = () => {
       )}
 
       {courses.length === 0 && !error && (
-        <p className="text-sm text-gray-500">You haven't created any courses yet.</p>
+        <p className="text-sm text-gray-500">
+          You haven't created any courses yet.
+        </p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -102,7 +115,9 @@ const TeacherDashboard = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate(`/teacher/edit-course/${course.id}`)}
+                    onClick={() =>
+                      navigate(`/teacher/edit-course/${course.id}`)
+                    }
                   >
                     Edit
                   </Button>
