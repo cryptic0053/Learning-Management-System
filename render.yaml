@@ -8,6 +8,8 @@ services:
       npm install
       npm run build
       cd ..
+      rm -rf lms_backend/frontend_build
+      cp -r lms_frontend/frontend_build lms_backend/frontend_build
       python manage.py collectstatic --noinput
       python manage.py migrate
     startCommand: gunicorn lms_backend.wsgi:application
