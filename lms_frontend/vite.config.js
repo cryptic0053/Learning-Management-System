@@ -1,21 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
   },
-  server: {
-    historyApiFallback: true,
-  },
   build: {
-    outDir: '../lms_backend/frontend_build',  // ✅ ensure this matches Django setup
+    outDir: '../lms_backend/frontend_build',
     emptyOutDir: true,
   },
-  base: '/', // ✅ this is critical for correct asset path resolution
+  base: '/', // critical for correct paths
 })
